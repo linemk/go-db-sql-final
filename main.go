@@ -3,33 +3,38 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"time"
 
 	_ "modernc.org/sqlite"
 )
 
 const (
-	ParcelStatusRegistered = "registered"
-	ParcelStatusSent       = "sent"
-	ParcelStatusDelivered  = "delivered"
+	ParcelStatusRegistered = "registered" // зарегистрировано
+	ParcelStatusSent       = "sent"       // отправлено
+	ParcelStatusDelivered  = "delivered"  // доставлено
 )
 
+// структура посылки
 type Parcel struct {
-	Number    int
-	Client    int
-	Status    string
-	Address   string
-	CreatedAt string
+	Number    int    // номер
+	Client    int    // клиент
+	Status    string // статус
+	Address   string // адрес доставки
+	CreatedAt string // время создания
 }
 
+// является указателем на БД
 type ParcelService struct {
-	store ParcelStore
+	store ParcelStore // указатель на БД
 }
 
+// функция конструктор
 func NewParcelService(store ParcelStore) ParcelService {
 	return ParcelService{store: store}
 }
 
+// регистрация посылки
 func (s ParcelService) Register(client int, address string) (Parcel, error) {
 	parcel := Parcel{
 		Client:    client,
@@ -51,6 +56,7 @@ func (s ParcelService) Register(client int, address string) (Parcel, error) {
 	return parcel, nil
 }
 
+// вывод посылок у клиента
 func (s ParcelService) PrintClientParcels(client int) error {
 	parcels, err := s.store.GetByClient(client)
 	if err != nil {
@@ -67,6 +73,7 @@ func (s ParcelService) PrintClientParcels(client int) error {
 	return nil
 }
 
+// новый статус
 func (s ParcelService) NextStatus(number int) error {
 	parcel, err := s.store.Get(number)
 	if err != nil {
@@ -88,18 +95,24 @@ func (s ParcelService) NextStatus(number int) error {
 	return s.store.SetStatus(number, nextStatus)
 }
 
+// смена адреса
 func (s ParcelService) ChangeAddress(number int, address string) error {
 	return s.store.SetAddress(number, address)
 }
 
+// удаление посылки
 func (s ParcelService) Delete(number int) error {
 	return s.store.Delete(number)
 }
 
 func main() {
-	// настройте подключение к БД
-
-	store := // создайте объект ParcelStore функцией NewParcelStore
+	// создаем структуру
+	db, err := sql.Open("sqlite", "tracker.db")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+	store := NewParcelStore(db)
 	service := NewParcelService(store)
 
 	// регистрация посылки
